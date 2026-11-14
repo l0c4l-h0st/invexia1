@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => {
                 name: CONFIG.title,
                 short_name: CONFIG.shortTitle,
                 description: CONFIG.description,
+                lang: 'fr',
                 theme_color: CONFIG.themeColor,
                 background_color: CONFIG.themeColor,
                 display: 'fullscreen',

@@ -163,10 +163,26 @@ export class Game {
     this.pv = this.chars.add(looks.player());
 
     // flèche 3D au-dessus de la cible + chevron au sol près du joueur
-    const cone = new THREE.ConeGeometry(0.42, 0.7, 4);
-    cone.rotateX(Math.PI);
-    const amat = new THREE.MeshBasicMaterial({ color: 0xffd23f, fog: false });
-    this.arrow = new THREE.Mesh(cone, amat);
+    // (flèche plate tournée vers la caméra : lisible sous tous les angles, contour sombre)
+    const down = (k: number): THREE.ShapeGeometry => {
+      const a = new THREE.Shape();
+      a.moveTo(0, -0.62 * k);
+      a.lineTo(0.5 * k, 0.02);
+      a.lineTo(0.2 * k, 0.02);
+      a.lineTo(0.2 * k, 0.55 * k);
+      a.lineTo(-0.2 * k, 0.55 * k);
+      a.lineTo(-0.2 * k, 0.02);
+      a.lineTo(-0.5 * k, 0.02);
+      a.closePath();
+      return new THREE.ShapeGeometry(a);
+    };
+    const amat = new THREE.MeshBasicMaterial({ color: 0xffd23f, fog: false, depthTest: false, transparent: true });
+    this.arrow = new THREE.Mesh(down(1), amat);
+    const rim = new THREE.Mesh(down(1.28), new THREE.MeshBasicMaterial({ color: 0x2b2350, fog: false, depthTest: false, transparent: true }));
+    rim.position.set(0, -0.02, -0.01);
+    rim.renderOrder = 8;
+    this.arrow.add(rim);
+    this.arrow.renderOrder = 9;
     this.arrow.visible = false;
     scene.add(this.arrow);
     const shape = new THREE.Shape();
@@ -1257,9 +1273,10 @@ export class Game {
     if (!t || !show) return;
     const strong = t.kind !== 'tile' || !!t.affordable;
     const bob = Math.abs(Math.sin(this.time * (strong ? 5 : 2.4))) * (strong ? 0.5 : 0.2);
-    this.arrow.position.set(t.x, (t.kind === 'tile' ? 1.5 : 2.5) + bob, t.z);
-    this.arrow.rotation.y = this.time * 2.5;
-    this.arrow.scale.setScalar(strong ? 1 : 0.6);
+    this.arrow.position.set(t.x, (t.kind === 'tile' ? 1.7 : 2.7) + bob, t.z);
+    this.arrow.quaternion.copy(this.stage.camera.quaternion);
+    const squash = strong ? 1 + Math.sin(this.time * 10) * 0.06 : 1;
+    this.arrow.scale.set((strong ? 1 : 0.62) / squash, (strong ? 1 : 0.62) * squash, 1);
     (this.arrow.material as THREE.MeshBasicMaterial).color.set(strong ? 0xffd23f : 0xffffff);
     const dx = t.x - this.px;
     const dz = t.z - this.pz;

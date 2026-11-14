@@ -101,7 +101,7 @@ export class Builder {
     const g =
       r <= 0.005
         ? cached(`b${w}|${h}|${d}`, () => new THREE.BoxGeometry(w, h, d))
-        : cached(`rb${w}|${h}|${d}|${r}`, () => new RoundedBoxGeometry(w, h, d, 2, r));
+        : cached(`rb${w}|${h}|${d}|${r}`, () => new RoundedBoxGeometry(w, h, d, r <= 0.09 ? 1 : 2, r));
     this.add(g, color, x, y + h / 2, z, o);
     return this;
   }
