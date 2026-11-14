@@ -39,6 +39,14 @@ if (params.has('tier') || params.has('city') || params.has('demo')) {
     state.stars = 12;
   }
 }
+// ?run2=1 : simule un 2e run après un premier prestige (~35 étoiles dépensées), pour l'équilibrage
+if (params.get('run2') === '1') {
+  (window as unknown as { __noSave: boolean }).__noSave = true;
+  state.features = { staff: true, upgrades: true, boosts: true, quests: true, prestige: true };
+  state.tutorial = 3;
+  state.starTree = { ...state.starTree, income: 3, speed: 2, capacity: 2, offlineCap: 1 };
+  state.stats.prestiges = 1;
+}
 const store = new Store(state);
 setLang(state.settings.lang);
 audio.applySettings(state.settings);

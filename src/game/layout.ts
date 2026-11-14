@@ -332,7 +332,7 @@ export function makeLayout(tierIndex: number): Layout {
     },
     roomUpTile: { x: -1.9, z: 3.3 },
     nextTile: { x: -3.0, z: 11.2 },
-    sign: { x: -3.4, z: 9.3 },
+    sign: { x: -2.8, z: 9.45 },
     bounds: { x0: sideSvc ? -14.4 : -9.5, x1: sideSvc ? 14.4 : 13.5, z0: northDoor ? zN - 10.2 : zN - 1.2, z1: 12.8 },
   };
 }

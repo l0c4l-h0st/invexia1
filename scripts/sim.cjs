@@ -40,7 +40,7 @@ const { chromium } = require('playwright');
     const p = await probe();
     const key = p.city + '.' + p.tier + '|' + p.f;
     if (key !== last) {
-      console.log('@' + mm(p.t) + ' ville ' + p.city + ' palier ' + p.tier + ' | systèmes: ' + (p.f || '-') + ' | run $' + p.run + ' | étoiles≈' + Math.floor(Math.sqrt(p.run / 15000)));
+      console.log('@' + mm(p.t) + ' ville ' + p.city + ' palier ' + p.tier + ' | systèmes: ' + (p.f || '-') + ' | run $' + p.run + ' | étoiles≈' + Math.floor(Math.sqrt(p.run / 65000)));
       last = key;
     }
     const b = p.bought + p.tier * 100 + p.city * 1000;

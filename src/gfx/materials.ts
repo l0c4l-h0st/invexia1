@@ -36,9 +36,11 @@ function softTexture(draw: (ctx: CanvasRenderingContext2D, s: number) => void, s
 
 /** Rectangle flou : ombres cuites sous le mobilier. */
 export const softRectTex = softTexture((ctx, s) => {
-  ctx.filter = 'blur(7px)';
+  // flou via shadowBlur (ctx.filter n'existe pas sur Safari iOS)
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = s * 0.16;
   ctx.fillStyle = '#fff';
-  const m = s * 0.2;
+  const m = s * 0.24;
   ctx.beginPath();
   ctx.roundRect(m, m, s - m * 2, s - m * 2, s * 0.12);
   ctx.fill();

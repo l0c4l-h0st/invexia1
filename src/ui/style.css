@@ -126,6 +126,9 @@ button {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.pill.cash.bump {
+  animation: bump 0.22s ease-out;
+}
 .pill.stars {
   display: none;
   color: #b06a00;
@@ -258,19 +261,25 @@ button {
 }
 .obj-row {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  font-size: 14px;
-  margin-bottom: 4px;
+}
+.obj-row .bar {
+  flex: 1;
 }
 .obj-label {
+  font-size: 14px;
+  line-height: 1.1;
+  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .obj-cost {
+  font-size: 15px;
   font-weight: 700;
   color: var(--green-d);
+  font-variant-numeric: tabular-nums;
 }
 .bar {
   height: 10px;
@@ -993,6 +1002,17 @@ button {
   }
 }
 
+@keyframes bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 @keyframes pop {
   0% {
     transform: scale(0);

@@ -48,6 +48,7 @@ export class UI implements GameUI {
   private sheet: HTMLElement;
   private modalEl: HTMLElement;
   private shownCash = 0;
+  private bumpT = 0;
   private panel: PanelId | null = null;
   private tab = 0;
   private panelHtml = '';
@@ -106,6 +107,7 @@ export class UI implements GameUI {
   // ------------------------------------------------------------- GameUI
   float(x: number, y: number, z: number, text: string, cls = ''): void {
     const p = this.stage.project(x, y, z);
+    if (p.x < -40 || p.x > this.stage.width + 40 || p.y < -40 || p.y > this.stage.height + 40) return; // hors écran
     const f = el('float ' + cls, cls === 'need-towel' ? icon('towel', 34) : text);
     f.style.left = p.x + 'px';
     f.style.top = p.y + 'px';
@@ -161,10 +163,19 @@ export class UI implements GameUI {
     const s = this.store.state;
     const diff = s.cash - this.shownCash;
     if (Math.abs(diff) > 0.5) {
+      // le compteur "saute" quand le cash monte
+      if (diff > 0 && this.bumpT <= 0) {
+        this.bumpT = 0.22;
+        const pill = this.cashEl.parentElement!;
+        pill.classList.remove('bump');
+        void pill.offsetWidth;
+        pill.classList.add('bump');
+      }
       this.shownCash += diff * Math.min(1, dt * 9);
       if (Math.abs(s.cash - this.shownCash) < 0.6) this.shownCash = s.cash;
       this.cashEl.textContent = money(this.shownCash);
     }
+    if (this.bumpT > 0) this.bumpT -= dt;
     this.hand.classList.toggle('on', s.tutorial === 0 && !this.panel);
     if (this.panel) {
       this.panelT -= dt;
@@ -205,7 +216,7 @@ export class UI implements GameUI {
                     : t('tier.' + TIERS[s.tier + 1].id);
         const ready = pct >= 1;
         this.objEl.className = 'objective show' + (ready ? ' ready' : '');
-        this.objEl.innerHTML = `<div class="obj-ic">${icon(o.icon, 34)}</div><div class="obj-main"><div class="obj-row"><span class="obj-label">${label}</span><span class="obj-cost">${money(Math.ceil(rem))}</span></div><div class="bar"><i style="width:${(pct * 100).toFixed(1)}%"></i></div></div>`;
+        this.objEl.innerHTML = `<div class="obj-ic">${icon(o.icon, 34)}</div><div class="obj-main"><div class="obj-label">${label}</div><div class="obj-row"><div class="bar"><i style="width:${(pct * 100).toFixed(1)}%"></i></div><span class="obj-cost">${money(Math.ceil(rem))}</span></div></div>`;
       }
     } else if (this.objKey) {
       this.objKey = '';

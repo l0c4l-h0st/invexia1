@@ -126,6 +126,7 @@ export class Game {
   private payDwell = 0;
   private payTick = 0;
   private hintT = 0;
+  private dustT = 0;
   private slowT = 0;
   private guideT = 0;
   time = 0;
@@ -842,6 +843,14 @@ export class Game {
       }
     }
     v.carry += ((this.stack > 0 ? 0.35 : 0) - v.carry) * Math.min(1, dt * 8);
+    // petits nuages de poussière sous les pas
+    if (moving) {
+      this.dustT -= dt;
+      if (this.dustT <= 0) {
+        this.dustT = 0.16;
+        this.puffs.emit(x, 0.12, z, { n: 1, speed: 0.5, up: 0.5, life: 0.4, size: 0.3, colors: [0xffffff], gravity: 0, drag: 2, grow: 1.2, spread: 0.2 });
+      }
+    }
   }
 
   private updateInteractions(dt: number): void {
@@ -1015,8 +1024,11 @@ export class Game {
       () =>
         this.ui.transition(() => {
           if (newCity) {
+            // nouvelle ville : on repart les poches vides (tout est investi dans le voyage)
             s.city++;
             s.tier = 0;
+            s.cash = 0;
+            s.pendingCash = 0;
           } else s.tier++;
           this.resetTierState();
           s.stats.maxTier = Math.max(s.stats.maxTier, s.city * TIERS.length + s.tier);
@@ -1269,7 +1281,7 @@ export class Game {
   private playerApproach(): Approach {
     const l = this.layout;
     const p = { x: this.px, z: this.pz };
-    if (p.z < -0.1 && p.z > l.zN && Math.abs(p.x) > L.CW) {
+    if (p.z < -0.1 && p.z > l.zN && Math.abs(p.x) > L.CW && Math.abs(p.x) < L.HX) {
       const row = Math.min(l.rows - 1, Math.floor(-p.z / L.RD));
       const cz = -(row + 0.5) * L.RD;
       return [{ x: 0, z: cz }, { x: Math.sign(p.x) * (L.CW + 0.7), z: cz }, p];
@@ -1313,11 +1325,27 @@ export class Game {
     }
   }
 
+  /** Le bot gère aussi les panneaux : améliorations rentables, quêtes, succès. */
+  private botManage(): void {
+    const s = this.s;
+    if (s.features.upgrades) {
+      const ids: UpgradeId[] = ['pIncome', 'pSpeed', 'pCap'];
+      if (s.staff.receptionist) ids.push('recSpeed', 'recCap');
+      if (s.staff.housekeeper) ids.push('hkSpeed', 'hkCap');
+      if (s.staff.bellhop) ids.push('bhSpeed', 'bhCap');
+      for (const id of ids) {
+        if (!E.upgradeMaxed(s, id) && E.upgradeCost(id, s.up[id]) <= s.cash * 0.2) this.buyUpgrade(id);
+      }
+    }
+    for (const q of [...s.quests]) if (q.progress >= q.target) this.claimQuest(q.id);
+    for (const id of ['guests', 'cleaned', 'vips', 'earned', 'bought', 'tier', 'quests', 'prestige']) this.claimAchievement(id);
+  }
+
   // ================================================================ boucle
   step(dt: number): void {
     const s = this.s;
     this.time += dt;
-    s.stats.playTime += dt;
+    if (!this.busy) s.stats.playTime += dt;
     if (s.boosts.income > 0) s.boosts.income = Math.max(0, s.boosts.income - dt);
     if (s.boosts.speed > 0) s.boosts.speed = Math.max(0, s.boosts.speed - dt);
     if (this.busy) {
@@ -1342,6 +1370,7 @@ export class Game {
       for (let i = 0; i < s.rooms; i++) if (this.rooms[i].state === 'reserved' || this.rooms[i].state === 'occupied') occupied++;
       this.view.setCars(s.tier === 0 || s.services.includes('parking') ? occupied : 0);
       this.store.touch(); // minuteurs de boosts, quêtes
+      if (this.bot) this.botManage();
     }
     this.updateGuide(dt);
   }

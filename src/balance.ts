@@ -57,7 +57,7 @@ export const TIERS: TierDef[] = [
   {
     id: 'inn',
     rate: 60,
-    costBase: 11,
+    costBase: 16,
     startRooms: 3,
     maxRooms: 8,
     chain: [
@@ -77,7 +77,7 @@ export const TIERS: TierDef[] = [
   {
     id: 'city',
     rate: 380,
-    costBase: 80,
+    costBase: 180,
     startRooms: 4,
     maxRooms: 10,
     chain: [
@@ -99,7 +99,7 @@ export const TIERS: TierDef[] = [
   {
     id: 'resort',
     rate: 2400,
-    costBase: 600,
+    costBase: 1700,
     startRooms: 4,
     maxRooms: 12,
     chain: [
@@ -124,7 +124,7 @@ export const TIERS: TierDef[] = [
   {
     id: 'palace',
     rate: 15000,
-    costBase: 4500,
+    costBase: 14000,
     startRooms: 5,
     maxRooms: 14,
     chain: [
@@ -227,13 +227,13 @@ export const B = {
 
   // ----- Villes -----
   city: {
-    incomeMult: 25, // revenus ×25 par ville
-    costMult: 32, // coûts ×32 par ville
+    incomeMult: 2500, // revenus ×2 500 par ville : le motel suivant rapporte plus que le palace quitté
+    costMult: 7500, // coûts ×7 500 par ville : chaque ville est ~3× plus longue → c'est le prestige qui débloque la suite
   },
 
   // ----- Prestige -----
   prestige: {
-    starDiv: 15000, // étoiles = floor(sqrt(cashDuRun / starDiv))
+    starDiv: 65000, // étoiles = floor(sqrt(cashDuRun / starDiv)) → ~11 en arrivant au Palace, ~35 Palace terminé
     minStars: 5,
   },
   /** Arbre d'étoiles. Coût du niveau n (1-indexé) = cost × n. */

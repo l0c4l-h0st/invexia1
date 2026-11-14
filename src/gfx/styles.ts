@@ -198,7 +198,7 @@ export const TOWN_MOODS: Mood[] = [
 
 export const THEME_MOODS: Record<Exclude<ThemeId, 'town'>, Mood> = {
   beach: { fog: 0x8fe3ff, ground: 0xf6e2a8, ground2: 0xefd592, path: 0xfff6dc, road: 0xe0c890, hemiSky: 0xffffff, hemiGround: 0xffe9b8, hemi: 2.7, sun: 0xfff3d0, sunI: 2.2, glow: 0.6, vignette: 'rgba(0,90,140,.25)' },
-  mountain: { fog: 0xdcecff, ground: 0xf4f8ff, ground2: 0xdfe9f7, path: 0xcfd6e2, road: 0x7c8494, hemiSky: 0xffffff, hemiGround: 0xcfdcf0, hemi: 2.6, sun: 0xfff6ea, sunI: 2.0, glow: 0.7, vignette: 'rgba(40,70,130,.3)' },
+  mountain: { fog: 0xcfe2fb, ground: 0xdde7f4, ground2: 0xc9d7ea, path: 0xb9c3d3, road: 0x7c8494, hemiSky: 0xffffff, hemiGround: 0xc4d2ea, hemi: 2.35, sun: 0xfff6ea, sunI: 2.0, glow: 0.7, vignette: 'rgba(40,70,130,.3)' },
   desert: { fog: 0xffc98a, ground: 0xeeb46a, ground2: 0xe0a258, path: 0xf6d9a8, road: 0xb98a5a, hemiSky: 0xfff0d6, hemiGround: 0xf2b070, hemi: 2.6, sun: 0xffe0a8, sunI: 2.3, glow: 0.6, vignette: 'rgba(130,50,10,.3)' },
   mega: { fog: 0x2a1f5c, ground: 0x3a3a52, ground2: 0x33334a, path: 0x5a5a78, road: 0x24243a, hemiSky: 0xc9b8ff, hemiGround: 0x5a4a8a, hemi: 2.2, sun: 0xff9ee0, sunI: 1.7, glow: 1.2, vignette: 'rgba(20,0,60,.55)' },
   undersea: { fog: 0x0f6fa8, ground: 0x4fb8c4, ground2: 0x3fa6b6, path: 0x8fe0e0, road: 0x2f8fa6, hemiSky: 0xbff4ff, hemiGround: 0x2f7fa8, hemi: 2.4, sun: 0xa8f0ff, sunI: 1.8, glow: 1.1, vignette: 'rgba(0,30,80,.5)' },

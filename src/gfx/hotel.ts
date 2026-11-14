@@ -638,13 +638,16 @@ export class HotelView {
   private buildSign(): void {
     const st = this.style;
     const text = st.signText;
-    const w = text.length * 0.56 + 0.9;
-    const h = 1.2;
+    const w = Math.min(3.4, text.length * 0.5 + 0.8);
+    const h = 1.1;
     const { x, z } = this.layout.sign;
     const b = new Builder();
     b.shadow(x, z, 1.0, 0.9, 0.35);
-    b.cyl(0.11, 0.15, 1.9, st.dingy ? 0x4a4038 : st.metal, x, 0, z, { seg: 8 });
-    b.box(0.5, 0.14, 0.5, st.dingy ? 0x4a4038 : st.metal, x, 0, z, { r: 0.04 });
+    // enseigne basse inclinée vers la caméra : lisible sans masquer le hall
+    for (const dx of [-w * 0.32, w * 0.32]) {
+      b.cyl(0.09, 0.12, 0.75, st.dingy ? 0x4a4038 : st.metal, x + dx, 0, z + 0.1, { seg: 8 });
+      b.box(0.4, 0.12, 0.4, st.dingy ? 0x4a4038 : st.metal, x + dx, 0, z + 0.1, { r: 0.04 });
+    }
     this.root.add(b.build());
 
     const make = (dead: number): THREE.CanvasTexture => {
@@ -691,8 +694,8 @@ export class HotelView {
     face.position.z = 0.135;
     const g = new THREE.Group();
     g.add(frame, face);
-    g.position.set(x, 2.35, z);
-    g.rotation.x = -0.42;
+    g.position.set(x, 1.15, z);
+    g.rotation.x = -0.72;
     this.root.add(g);
     this.disposables.push(frame.geometry, frame.material as THREE.Material, face.geometry, mat);
 
