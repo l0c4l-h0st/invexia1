@@ -1,0 +1,7 @@
+{
+  "appId": "com.palacerush.game",
+  "appName": "Palace Rush",
+  "webDir": "dist",
+  "android": { "backgroundColor": "#2b2350" },
+  "ios": { "backgroundColor": "#2b2350", "contentInset": "never" }
+}
