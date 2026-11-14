@@ -5,7 +5,7 @@ import { money } from '../core/format';
 import type { Joystick } from '../core/input';
 import type { GameState, Store } from '../core/store';
 import { CharRenderer, CharView, looks, POSE } from '../gfx/chars';
-import { Blobs, Flyers, makeBillPool, makePaperPool, makeTowelPool, Particles, puffTex, sparkTex, Zones, zTex, type ItemPool } from '../gfx/fx';
+import { Blobs, Flyers, heartTex, makeBillPool, makeCoinPool, makePaperPool, makeTowelPool, Particles, puffTex, sparkTex, Zones, zTex, type ItemPool } from '../gfx/fx';
 import { HotelView } from '../gfx/hotel';
 import type { Stage } from '../gfx/stage';
 import { TileView } from '../gfx/tiles';
@@ -127,6 +127,15 @@ export class Game {
   private payTick = 0;
   private hintT = 0;
   private dustT = 0;
+  // combo "Rush" et pourboires oubliés
+  combo = 0;
+  comboT = 0;
+  comboBump = 0; // incrémenté à chaque cran : l'UI s'en sert pour rejouer l'animation
+  private coins: { x: number; z: number; age: number; place: Approach }[] = [];
+  private coinT = 10;
+  private coinPool: ItemPool;
+  private hearts: Particles;
+  private rushT = 0;
   private slowT = 0;
   private guideT = 0;
   time = 0;
@@ -160,6 +169,8 @@ export class Game {
     this.sparks = new Particles(scene, sparkTex, 120, true);
     this.puffs = new Particles(scene, puffTex, 80);
     this.zs = new Particles(scene, zTex, 40);
+    this.hearts = new Particles(scene, heartTex, 40);
+    this.coinPool = makeCoinPool(scene);
     this.pv = this.chars.add(looks.player());
 
     // flèche 3D au-dessus de la cible + chevron au sol près du joueur
@@ -235,9 +246,16 @@ export class Game {
     const [a, b] = E.vipInterval(s);
     this.vipT = a + Math.random() * (b - a);
     for (const role of ['receptionist', 'housekeeper', 'bellhop'] as Role[]) for (let i = 0; i < s.staff[role]; i++) this.spawnStaff(role, i, false);
+    this.coins = [];
+    this.coinT = 8;
+    this.combo = 0;
+    this.comboT = 0;
     if (s.pendingCash > 0) {
       this.addPile('pending', 1.0, 5.3, s.pendingCash, places.free({ x: 1.0, z: 5.3 }));
       s.pendingCash = 0;
+    } else if (s.city === 0 && s.tier === 0 && s.runCash === 0 && s.cash === 0) {
+      // tout début d'un run : une pile de bienvenue à ramasser = premier achat dans les 10 secondes
+      this.addPile('starter', -0.9, 3.1, B.player.starterCash, places.free({ x: -0.9, z: 3.1 }));
     }
     this.refreshColliders();
     this.refreshTiles();
@@ -328,6 +346,7 @@ export class Game {
 
   private collectPile(p: Pile, tx: () => { x: number; y: number; z: number }, byPlayer: boolean, mult = 1): void {
     p.dead = true;
+    if (byPlayer) mult *= this.bumpCombo();
     const total = p.value * mult;
     this.earn(total);
     const n = p.n;
@@ -361,7 +380,80 @@ export class Game {
   private billOffset(i: number): { x: number; y: number; z: number } {
     const layer = Math.floor(i / 4);
     const k = i % 4;
-    return { x: (k % 2) * 0.5 - 0.25, y: 0.06 + layer * 0.078, z: Math.floor(k / 2) * 0.31 - 0.155 };
+    return { x: (k % 2) * 0.56 - 0.28, y: 0.07 + layer * 0.093, z: Math.floor(k / 2) * 0.34 - 0.17 };
+  }
+
+  // ====================================================== combo & pourboires
+  /** Multiplicateur de cash du combo en cours. */
+  comboMult(): number {
+    return 1 + Math.min(this.combo, B.combo.max) * B.combo.per;
+  }
+  get rush(): boolean {
+    return this.combo >= B.combo.rushAt;
+  }
+  /** Une action faite par le joueur : le combo monte d'un cran. Renvoie le multiplicateur à appliquer. */
+  private bumpCombo(): number {
+    const was = this.rush;
+    this.combo = Math.min(this.combo + 1, 99);
+    this.comboT = B.combo.window;
+    this.comboBump++;
+    if (this.combo >= 2) audio.combo(Math.min(this.combo, B.combo.max));
+    if (!was && this.rush) {
+      this.ui.toast('bolt', 'rush.on');
+      this.stage.punch();
+      audio.vip();
+      audio.buzz([20, 30, 40]);
+      this.sparks.emit(this.px, 1.2, this.pz, { n: 16, speed: 3, up: 3, life: 0.7, size: 0.36, colors: [0xffd84a, 0xff9f43, 0xffffff], gravity: 0, drag: 2 });
+    }
+    this.store.touch();
+    return this.comboMult();
+  }
+
+  private checkTutorial(): void {
+    const s = this.s;
+    if (s.tutorial < 3 && s.stats.bought >= 1 && s.stats.guests >= 1 && s.stats.cleaned >= 1) s.tutorial = 3;
+  }
+
+  /** Fait apparaître une pièce d'or à un endroit libre, loin du joueur. */
+  private spawnCoin(): void {
+    const l = this.layout;
+    for (let tries = 0; tries < 8; tries++) {
+      const r = Math.random();
+      let x: number;
+      let z: number;
+      let place: Approach | null = null;
+      if (r < 0.45) {
+        x = (Math.random() - 0.5) * 2.0;
+        z = l.zN + 1 + Math.random() * (-l.zN - 1.8);
+      } else if (r < 0.75) {
+        x = -4.4 + Math.random() * 5.6;
+        z = 3.9 + Math.random() * 2.4;
+      } else {
+        const room = l.rooms[Math.floor(Math.random() * this.s.rooms)];
+        x = room.side * 2.7;
+        z = room.cz + 1.2;
+        place = places.room(l, room.idx, { x, z });
+      }
+      if (dist2(x, z, this.px, this.pz) < 9) continue;
+      if (this.coins.some((c) => dist2(x, z, c.x, c.z) < 4)) continue;
+      this.coins.push({ x, z, age: 0, place: place ?? places.free({ x, z }) });
+      return;
+    }
+  }
+
+  private collectCoin(i: number): void {
+    const c = this.coins[i];
+    this.coins.splice(i, 1);
+    const value = E.roomRate(this.s) * B.tips.value * this.bumpCombo();
+    this.earn(value);
+    this.ui.float(c.x, 1.6, c.z, '+' + money(value), 'vip');
+    this.sparks.emit(c.x, 0.9, c.z, { n: 10, speed: 2.6, up: 2.6, life: 0.6, size: 0.34, colors: [0xffd84a, 0xfff3a8, 0xffffff], gravity: 0, drag: 2 });
+    for (let k = 0; k < 5; k++) {
+      this.flyers.add({ pool: this.coinPool, fx: c.x + (Math.random() - 0.5) * 0.5, fy: 0.6, fz: c.z + (Math.random() - 0.5) * 0.5, to: () => ({ x: this.px, y: 1.0, z: this.pz }), dur: 0.3, arc: 1.4, delay: k * 0.04, done: () => audio.cash() });
+    }
+    this.pv.punch = 1;
+    audio.ding();
+    audio.buzz(15);
   }
 
   // ================================================================= staff
@@ -542,7 +634,7 @@ export class Game {
           if (best) {
             best.claimed = n;
             n.pile = best;
-            this.go(n, [...best.place.slice(0, -1), { x: best.x + (best.x > 0 ? -0.5 : 0.5), z: best.z + 0.45 }]);
+            this.go(n, [...best.place.slice(0, -1), { x: best.x + Math.sign(best.x || 1) * 0.6, z: best.z + 0.45 }]);
             n.state = 'toPile';
           } else if (n.t <= 0) {
             n.t = 3;
@@ -613,6 +705,11 @@ export class Game {
     this.puffs.emit(slot.bed.x, 0.7, slot.bed.z, { n: 5, speed: 1.2, up: 0.6, life: 0.5, size: 0.5, colors: [0xffffff], gravity: 0, drag: 3, grow: 1.2, spread: 1 });
     const near = dist2(by.x, by.z, this.px, this.pz) < 200;
     if (near) audio.clean();
+    if (by === this.pv) {
+      this.bumpCombo();
+      this.ui.float(slot.cx, 1.6, slot.cz, '', 'sparkle');
+    }
+    this.checkTutorial();
     if (questProgress(this.s, 'clean', 1)) this.questDone();
     this.store.touch();
   }
@@ -648,7 +745,7 @@ export class Game {
     return -1;
   }
 
-  private doCheckin(): void {
+  private doCheckin(byPlayer: boolean): void {
     const g = this.queue[0];
     const i = this.freeRoom();
     if (!g || i < 0) return;
@@ -671,11 +768,21 @@ export class Game {
     s.stats.guests++;
     audio.ding();
     this.sparks.emit(g.v.x, 1.7, g.v.z, { n: 6, speed: 1.6, up: 1.6, life: 0.6, size: 0.3, colors: [0xfff3a8, 0xffffff], gravity: 0, drag: 2 });
+    this.hearts.emit(g.v.x, 1.9, g.v.z, { n: 1, speed: 0.2, up: 1.1, life: 0.9, size: 0.5, colors: [0xff5d8f], gravity: 0, drag: 0.6, spread: 0.1, grow: 0.3 });
+    // acompte payé tout de suite : la première action du jeu rapporte immédiatement
+    const tip = E.roomRate(s) * B.guest.checkinTip * (g.vip ? B.guest.vipMult : 1) * (byPlayer ? this.bumpCombo() : 1);
+    this.earn(tip);
+    this.ui.float(g.v.x, 2.0, g.v.z, '+' + money(tip), 'cash');
+    const gx = g.v.x;
+    const gz = g.v.z;
+    for (let k = 0; k < 3; k++) {
+      this.flyers.add({ pool: this.bills, fx: gx, fy: 1.1, fz: gz, to: () => (byPlayer ? { x: this.px, y: 1.0, z: this.pz } : { x: l.desk.x, y: 1.0, z: l.desk.z }), dur: 0.3, arc: 1.0, delay: k * 0.06, done: byPlayer ? () => audio.cash() : undefined });
+    }
     if (s.services.includes('parking')) {
       const sv = l.services.parking!;
       this.addPile('svc:parking', sv.pile.x, sv.pile.z, E.roomRate(s) * B.guest.parkingPay * (g.vip ? B.guest.vipMult : 1), places.service(sv, sv.pile));
     }
-    if (s.tutorial === 1) s.tutorial = 2;
+    this.checkTutorial();
     if (questProgress(s, 'checkin', 1)) this.questDone();
     this.store.touch();
   }
@@ -775,6 +882,7 @@ export class Game {
     this.rooms[g.room].state = 'dirty';
     this.rooms[g.room].progress = 0;
     this.view.setDirty(g.room, true);
+    this.hearts.emit(v.x, 1.9, v.z, { n: g.vip ? 3 : 1, speed: 0.4, up: 1.1, life: 0.9, size: 0.5, colors: [0xff5d8f], gravity: 0, drag: 0.6, spread: 0.3, grow: 0.3 });
     const pay = E.roomRate(s) * (g.vip ? B.guest.vipMult : 1) * E.tipMult(s);
     this.addPile('room:' + g.room, slot.pile.x, slot.pile.z, pay, places.room(l, g.room, slot.pile));
     if (g.vip) {
@@ -802,7 +910,7 @@ export class Game {
     const s = this.s;
     if (this.bot) this.botSteer();
     else this.joy.read(this.stick);
-    const sp = E.playerSpeed(s);
+    const sp = E.playerSpeed(s) * (this.rush ? B.combo.rushSpeed : 1);
     const tvx = this.stick.x * sp;
     const tvz = this.stick.y * sp;
     const k = Math.min(1, dt * 14);
@@ -859,6 +967,14 @@ export class Game {
       }
     }
     v.carry += ((this.stack > 0 ? 0.35 : 0) - v.carry) * Math.min(1, dt * 8);
+    // en RUSH : traînée d'étincelles
+    if (moving && this.rush) {
+      this.rushT -= dt;
+      if (this.rushT <= 0) {
+        this.rushT = 0.07;
+        this.sparks.emit(x, 0.5 + Math.random() * 0.8, z, { n: 1, speed: 0.5, up: 0.6, life: 0.45, size: 0.3, colors: [0xffd84a, 0xff9f43, 0xffffff], gravity: 0, drag: 2, spread: 0.5 });
+      }
+    }
     // petits nuages de poussière sous les pas
     if (moving) {
       this.dustT -= dt;
@@ -888,7 +1004,7 @@ export class Game {
       this.checkin += rate * dt;
       if (this.checkin >= 1) {
         this.checkin = 0;
-        this.doCheckin();
+        this.doCheckin(inDesk);
         if (inDesk) audio.buzz(18);
       }
     } else this.checkin = Math.max(0, this.checkin - dt * B.zone.decay);
@@ -942,6 +1058,9 @@ export class Game {
       if (dist2(this.px, this.pz, p.x, p.z) < cr2) this.collectPile(p, () => ({ x: this.px, y: 1.0, z: this.pz }), true);
     }
     for (let i = this.piles.length - 1; i >= 0; i--) if (this.piles[i].dead) this.piles.splice(i, 1);
+    for (let i = this.coins.length - 1; i >= 0; i--) {
+      if (dist2(this.px, this.pz, this.coins[i].x, this.coins[i].z) < cr2 * 0.6) this.collectCoin(i);
+    }
 
     // ---- dalles d'achat : rester dessus pour payer
     let onTile: ActiveTile | null = null;
@@ -987,7 +1106,8 @@ export class Game {
     delete s.paid[t.id];
     s.bought[t.id] = 1;
     s.stats.bought++;
-    if (s.tutorial < 3) s.tutorial = 3;
+    this.bumpCombo();
+    this.checkTutorial();
     switch (item.kind) {
       case 'room':
         s.rooms = item.n;
@@ -1245,6 +1365,11 @@ export class Game {
     if (this.stack === 0 && s.staff.housekeeper === 0 && this.rooms.some((r, i) => i < s.rooms && r.state !== 'clean')) {
       return { x: l.closetZone.x, z: l.closetZone.z, kind: 'closet', place: places.closet(l) };
     }
+    // 5. un pourboire oublié (le bot les ramasse quand il n'a rien de plus urgent)
+    if (this.bot && this.coins.length) {
+      const c = this.coins[0];
+      return { x: c.x, z: c.z, kind: 'pile', place: c.place };
+    }
     if (s.staff.receptionist === 0) return { x: l.checkin.x, z: l.checkin.z, kind: 'checkin', place: places.desk(l, 0) };
     return null;
   }
@@ -1375,6 +1500,20 @@ export class Game {
       this.spawnT = B.guest.spawnEvery * (0.7 + Math.random() * 0.6);
       this.spawnGuest();
     }
+    if (this.comboT > 0) {
+      this.comboT -= dt;
+      if (this.comboT <= 0) {
+        this.combo = 0;
+        this.store.touch();
+      }
+    }
+    for (const c of this.coins) c.age += dt;
+    this.coinT -= dt;
+    if (this.coinT <= 0) {
+      const [c0, c1] = B.tips.every;
+      this.coinT = c0 + Math.random() * (c1 - c0);
+      if (this.coins.length < B.tips.max && s.stats.guests >= 2) this.spawnCoin();
+    }
     this.updatePlayer(dt);
     this.updateGuests(dt);
     this.updateStaff(dt);
@@ -1433,9 +1572,18 @@ export class Game {
     this.towels.begin();
     this.papers.begin();
     this.blobs.begin();
+    this.coinPool.begin();
+    for (const c of this.coins) {
+      const grow = Math.min(1, c.age * 3);
+      const k = grow * (1 + 0.25 * Math.sin(Math.min(1, c.age * 3) * Math.PI));
+      this.coinPool.put(c.x, 0.62 + Math.sin(time * 3.2 + c.x) * 0.12, c.z, time * 3.5 + c.z, 1.25 * k);
+      this.blobs.put(c.x, c.z, 0.9);
+      if (Math.random() < dt * 2.2) this.sparks.emit(c.x, 0.9, c.z, { n: 1, speed: 0.5, up: 0.7, life: 0.6, size: 0.24, colors: [0xffd84a, 0xfff3a8], gravity: 0, drag: 1, spread: 0.6 });
+    }
     for (const p of this.piles) {
       if (p.pop > 0) p.pop = Math.max(0, p.pop - dt * 3.5);
-      const sc = 1 + Math.sin(p.pop * Math.PI) * 0.35;
+      // les piles "respirent" doucement pour attirer l'œil
+      const sc = 1 + Math.sin(p.pop * Math.PI) * 0.35 + Math.sin(time * 4 + p.x * 3) * 0.035;
       for (let i = 0; i < p.n; i++) {
         const o = this.billOffset(i);
         this.bills.put(p.x + o.x * sc, o.y * sc, p.z + o.z * sc, ((i * 7) % 5) * 0.06 - 0.12, sc);
@@ -1447,6 +1595,7 @@ export class Game {
     for (const n of this.staff) if (n.role === 'housekeeper') this.drawStack(n.v, n.carry, n.stack, dt);
     this.flyers.update(dt);
     this.bills.end();
+    this.coinPool.end();
     this.towels.end();
     this.papers.end();
     for (const c of this.chars.list) if (c.pose === POSE.stand && c.visible) this.blobs.put(c.x, c.z, 1.05 * c.look.scale);
@@ -1458,6 +1607,7 @@ export class Game {
     this.sparks.update(dt, q);
     this.puffs.update(dt, q);
     this.zs.update(dt, q);
+    this.hearts.update(dt, q);
   }
 
   private drawStack(v: CharView, count: number, pos: { x: number; y: number; z: number }[], dt: number): void {

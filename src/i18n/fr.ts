@@ -149,6 +149,11 @@ export const fr = {
   'offline.cap': 'Plafond : {t}',
   'offline.collect': 'Récupérer',
   'offline.double': '×2',
+  'rush.on': 'RUSH ! Gains boostés',
+  'combo.rush': 'RUSH',
+  'combo.label': 'COMBO',
+  'title.tap': 'Touche pour jouer',
+  'title.tag': 'Du motel miteux au palace',
   'rotate': 'Tourne ton téléphone',
   'need.towel': 'Serviettes !',
 };

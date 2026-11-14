@@ -121,7 +121,7 @@ export function desk(b: Builder, st: TierStyle): void {
   b.sph(0.035, 0xe8951c, -0.9, 1.21, 0.15, { seg: 6 });
   // écran + registre
   b.box(0.5, 0.36, 0.06, 0x2a2a35, 0.75, 1.12, -0.18, { r: 0.03, rx: 0.2 });
-  b.box(0.42, 0.28, 0.02, st.dingy ? 0x7fae8f : 0x9fe3ff, 0.75, 1.16, -0.145, { r: 0.01, rx: 0.2, glow: true });
+  b.box(0.42, 0.28, 0.02, st.dingy ? 0x9fe0c0 : 0x9fe3ff, 0.75, 1.16, -0.145, { r: 0.01, rx: 0.2, glow: true });
   b.box(0.2, 0.08, 0.14, 0x2a2a35, 0.75, 1.05, -0.16, { r: 0.02 });
   b.box(0.4, 0.05, 0.3, 0xfdfaf2, 0.05, 1.05, 0.12, { r: 0.02, ry: 0.2 });
   if (st.luxe >= 2) {
@@ -130,13 +130,13 @@ export function desk(b: Builder, st: TierStyle): void {
     b.sph(0.2, 0xff7eb6, 1.25, 1.5, 0.15, { seg: 8 });
     b.sph(0.14, 0xffb3d1, 1.15, 1.62, 0.2, { seg: 7 });
   }
-  if (st.dingy) b.box(0.5, 0.3, 0.04, 0x8a7a5a, -0.3, 0.4, 0.4, { r: 0.01, rz: 0.08 }); // affichette de travers
+  if (st.dingy) b.box(0.5, 0.3, 0.04, 0xffe9a8, -0.3, 0.4, 0.4, { r: 0.01, rz: 0.08 }); // affichette de travers
 }
 
 /** Étagères de linge (dos contre le mur -X). */
 export function linenShelf(b: Builder, st: TierStyle): void {
   b.shadow(0.1, 0, 1.5, 3.0, 0.4);
-  const wood = st.dingy ? 0x6f573f : st.wood;
+  const wood = st.wood;
   b.box(0.85, 1.7, 0.12, wood, 0, 0, -1.2, { r: 0.04 });
   b.box(0.85, 1.7, 0.12, wood, 0, 0, 1.2, { r: 0.04 });
   for (let i = 0; i < 3; i++) {
@@ -147,9 +147,9 @@ export function linenShelf(b: Builder, st: TierStyle): void {
         b.cyl(0.15, 0.15, 0.26, 0xfdfdf6, 0.02, 0.81, z, { seg: 10 });
         b.cyl(0.15, 0.15, 0.26, 0xfdfdf6, 0.02, 1.07, z + 0.02, { seg: 10 });
       } else {
-        const c = (i + k) % 2 ? 0xffffff : st.dingy ? 0xd9d2bf : 0x9fe3ff;
+        const c = (i + k) % 2 ? 0xffffff : st.dingy ? 0xffd9a0 : 0x9fe3ff;
         b.box(0.6, 0.16, 0.44, c, 0.02, 0.21 + i * 0.6, z, { r: 0.07 });
-        b.box(0.6, 0.16, 0.44, (i + k) % 2 ? (st.dingy ? 0xcfc8b4 : 0x9fe3ff) : 0xffffff, 0.03, 0.37 + i * 0.6, z, { r: 0.07 });
+        b.box(0.6, 0.16, 0.44, (i + k) % 2 ? (st.dingy ? 0xa8e0d0 : 0x9fe3ff) : 0xffffff, 0.03, 0.37 + i * 0.6, z, { r: 0.07 });
       }
     }
   }

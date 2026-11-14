@@ -104,3 +104,50 @@ Pas de framework de test : des scripts Playwright pilotent le vrai jeu.
   la fenêtre hors-ligne, FR et EN.
 - **Non testé** : un vrai téléphone (toucher, 60 fps réels, audio, vibrations, installation PWA,
   safe areas). Voir TODO.
+
+## 2026-11-14 — Session 2 : refonte du début de partie et du look
+
+**Retour du propriétaire après avoir joué** : « le gameplay du début est pas assez bien, en 3 min
+t'as envie de le désinstaller », et les graphismes doivent donner envie.
+
+### Diagnostic
+- Trop d'attente : 1 seule chambre, client qui dort 8,5 s, premier achat après ~1 min, deuxième
+  après ~2 min 15. Entre deux, rien à faire.
+- Aucune récompense immédiate : la première action (enregistrer) ne rapportait rien sur le moment.
+- 10 minutes en solo avant le premier employé, alors que l'automatisation est le crochet du genre.
+- Première image du jeu : un motel brun sombre sous un ciel violet. « Miteux » avait été pris au
+  pied de la lettre ; ça ne donnait pas envie.
+
+### Ce qui a changé
+- **Rythme** (`src/balance.ts`) : départ avec 2 chambres, clients toutes les 1,5 s, sommeil 5,5 s,
+  enregistrement 0,6 s, ménage 0,9 s, joueur plus rapide (5,6), aimant à cash (rayon 1,7), 4 pièces
+  de linge portées. Chaîne du motel refaite : 11 achats de 15 à 700 $.
+- **Pile de bienvenue** : 20 $ à ramasser dans le hall, première dalle à 15 $ → un achat avec
+  confettis dans les 10 premières secondes.
+- **Acompte à l'enregistrement** : 30 % du tarif tout de suite, billets qui volent du client au joueur.
+- **Combo « Rush »** : enchaîner les actions soi-même donne jusqu'à ×1,5 de cash ; à 6 crans, mode
+  RUSH (vitesse +12 %, étincelles). Badge animé dans le HUD. Bonus seulement, pas de malus.
+- **Pourboires oubliés** : pièces d'or qui apparaissent dans l'hôtel, à aller chercher.
+- **Staff à 2 min 30** au lieu de 10 min.
+- **Écran-titre** avec logo ; un tap lance la partie et débloque le son.
+- **Tutoriel** réordonné : acheter → accueillir → nettoyer, dans l'ordre où le jeu les présente.
+- **Look du motel** : crème passé, turquoise écaillé, moquette corail, lino en damier, comptoir en
+  formica turquoise, heure dorée. L'usure reste dans les détails. Haies, arbres, bidons et pneus
+  autour du bâtiment ; portes ouvertes dans toutes les chambres ; cœurs quand un client est content ;
+  billets plus gros, piles qui « respirent » ; caméra un peu plus proche, personnages un peu plus grands.
+- HUD : avancement du palier (`3/11`) dans la carte d'objectif.
+
+### Mesures (bot)
+- Motel : un achat toutes les ~20 s, palier bouclé en 4 min (17 min avant). Un humain : ~6 à 8 min.
+- Ville 1 : 40 min (67 avant). `costBase` des paliers 2 à 5 relevés (18 / 250 / 2 400 / 20 000) pour
+  compenser le rythme plus rapide.
+- 2e run après prestige : ×2,5 (cible 2 à 4×).
+
+### Décisions
+- **Écart à la consigne « 10 minutes de boucle de base seule »** : ramené à 2 min 30 parce que le test
+  a montré que c'était trop long. Réglable en une ligne : `B.unlock.staffTime`.
+- **« Miteux » = usé, pas triste.** Le contraste avec le palace reste fort (voir captures), mais la
+  première minute doit être belle.
+- **Le combo ne s'applique qu'au joueur**, pas au staff : jouer activement reste plus rentable que
+  regarder, sans jamais punir celui qui pose son téléphone.
+- Toujours non testé sur un vrai téléphone ; le ressenti du nouveau rythme est à confirmer en main.

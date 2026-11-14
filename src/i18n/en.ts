@@ -151,6 +151,11 @@ export const en: Dict = {
   'offline.cap': 'Cap: {t}',
   'offline.collect': 'Collect',
   'offline.double': '×2',
+  'rush.on': 'RUSH! Boosted earnings',
+  'combo.rush': 'RUSH',
+  'combo.label': 'COMBO',
+  'title.tap': 'Tap to play',
+  'title.tag': 'From shabby motel to palace',
   'rotate': 'Rotate your phone',
   'need.towel': 'Towels!',
 };

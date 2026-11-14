@@ -48,9 +48,9 @@ const PANTS = [0x2d3e63, 0x3b3b4f, 0x6b4a2e, 0x4a6b8a, 0x556b2f, 0x7a3b4a];
 const pick = <T>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
 
 export const looks = {
-  guest: (): CharLook => ({ skin: pick(SKINS), shirt: pick(SHIRTS), pants: pick(PANTS), hair: pick(HAIRS), hat: 0, hatColor: 0, scale: 0.94 + Math.random() * 0.1 }),
-  vip: (): CharLook => ({ skin: pick(SKINS), shirt: 0x7b2ff7, pants: 0x1c1c2e, hair: pick(HAIRS), hat: 2, hatColor: 0xffc933, scale: 1.08 }),
-  player: (): CharLook => ({ skin: 0xffd2b0, shirt: 0x18c29c, pants: 0x2b3a67, hair: 0x4a2f1c, hat: 1, hatColor: 0xffc933, scale: 1.06 }),
+  guest: (): CharLook => ({ skin: pick(SKINS), shirt: pick(SHIRTS), pants: pick(PANTS), hair: pick(HAIRS), hat: 0, hatColor: 0, scale: 1.0 + Math.random() * 0.1 }),
+  vip: (): CharLook => ({ skin: pick(SKINS), shirt: 0x7b2ff7, pants: 0x1c1c2e, hair: pick(HAIRS), hat: 2, hatColor: 0xffc933, scale: 1.14 }),
+  player: (): CharLook => ({ skin: 0xffd2b0, shirt: 0x18c29c, pants: 0x2b3a67, hair: 0x4a2f1c, hat: 1, hatColor: 0xffc933, scale: 1.14 }),
   receptionist: (): CharLook => ({ skin: pick(SKINS), shirt: 0x3a4a8a, pants: 0x1f2540, hair: pick(HAIRS), hat: 0, hatColor: 0, scale: 1 }),
   housekeeper: (): CharLook => ({ skin: pick(SKINS), shirt: 0xff8fb8, pants: 0xf6f1ea, hair: pick(HAIRS), hat: 1, hatColor: 0xffffff, scale: 0.98 }),
   bellhop: (): CharLook => ({ skin: pick(SKINS), shirt: 0xd62839, pants: 0x1f1f2e, hair: pick(HAIRS), hat: 1, hatColor: 0xd62839, scale: 1 }),

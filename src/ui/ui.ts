@@ -45,6 +45,10 @@ export class UI implements GameUI {
   private bannerEl: HTMLElement;
   private hand: HTMLElement;
   private fade: HTMLElement;
+  private comboEl: HTMLElement;
+  private titleEl: HTMLElement;
+  private comboSeen = 0;
+  private comboKey = '';
   private sheet: HTMLElement;
   private modalEl: HTMLElement;
   private shownCash = 0;
@@ -84,9 +88,11 @@ export class UI implements GameUI {
     this.floats = el('floats');
     this.hand = el('hand', `<div class="hand-ring"></div><div class="hand-ic">${icon('hand', 54)}</div>`);
     this.fade = el('fade', `<div class="fade-ic">${icon('hotel', 84)}</div>`);
+    this.comboEl = el('combo', `<div class="combo-x"></div><div class="combo-side"><span class="combo-tag"></span><div class="combo-bar"><i></i></div></div>`);
+    this.titleEl = el('title');
     this.sheet = el('sheet-wrap');
     this.modalEl = el('modal-wrap');
-    this.root.append(top, this.stepsEl, this.objEl, this.chipsEl, this.sideEl, this.toasts, this.floats, this.hand, this.bannerEl, this.sheet, this.modalEl, this.fade);
+    this.root.append(top, this.stepsEl, this.objEl, this.comboEl, this.chipsEl, this.sideEl, this.toasts, this.floats, this.hand, this.bannerEl, this.sheet, this.modalEl, this.fade, this.titleEl);
 
     // délégation : une action = attribut data-act (robuste aux re-rendus)
     let downX = 0;
@@ -108,7 +114,7 @@ export class UI implements GameUI {
   float(x: number, y: number, z: number, text: string, cls = ''): void {
     const p = this.stage.project(x, y, z);
     if (p.x < -40 || p.x > this.stage.width + 40 || p.y < -40 || p.y > this.stage.height + 40) return; // hors écran
-    const f = el('float ' + cls, cls === 'need-towel' ? icon('towel', 34) : text);
+    const f = el('float ' + cls, cls === 'need-towel' ? icon('towel', 34) : cls === 'sparkle' ? icon('sparkle', 44) : text);
     f.style.left = p.x + 'px';
     f.style.top = p.y + 'px';
     this.floats.appendChild(f);
@@ -157,6 +163,24 @@ export class UI implements GameUI {
     }, 420);
   }
 
+  /** Écran-titre : un tap lance la partie (et débloque l'audio). Le jeu tourne déjà derrière. */
+  showTitle(): void {
+    const [a, b] = CONFIG.title.split(' ');
+    this.titleEl.innerHTML = `<div class="title-logo"><div class="title-star">${icon('star', 92)}</div><div class="title-word w1">${a ?? CONFIG.title}</div><div class="title-word w2">${b ?? ''}</div><div class="title-tag">${t('title.tag')}</div></div><div class="title-tap">${icon('hand', 34)}<span>${t('title.tap')}</span></div>`;
+    this.titleEl.classList.add('on');
+    const go = (): void => {
+      this.titleEl.removeEventListener('pointerdown', go);
+      audio.unlock();
+      audio.pop();
+      this.titleEl.classList.add('out');
+      window.setTimeout(() => this.titleEl.classList.remove('on', 'out'), 450);
+    };
+    this.titleEl.addEventListener('pointerdown', go);
+  }
+  get titleOn(): boolean {
+    return this.titleEl.classList.contains('on') && !this.titleEl.classList.contains('out');
+  }
+
   // ---------------------------------------------------------------- HUD
   /** Appelé chaque frame : compteur de cash animé, rafraîchissement du panneau ouvert. */
   tick(dt: number): void {
@@ -176,7 +200,27 @@ export class UI implements GameUI {
       this.cashEl.textContent = money(this.shownCash);
     }
     if (this.bumpT > 0) this.bumpT -= dt;
-    this.hand.classList.toggle('on', s.tutorial === 0 && !this.panel);
+    // badge de combo : multiplicateur + jauge de temps restant
+    const g = this.game;
+    const on = g.combo >= 2;
+    this.comboEl.classList.toggle('on', on);
+    if (on) {
+      const key = g.combo + '|' + (g.rush ? 1 : 0);
+      if (key !== this.comboKey) {
+        this.comboKey = key;
+        this.comboEl.classList.toggle('rush', g.rush);
+        (this.comboEl.querySelector('.combo-x') as HTMLElement).textContent = '×' + g.comboMult().toFixed(2).replace(/0$/, '');
+        (this.comboEl.querySelector('.combo-tag') as HTMLElement).textContent = g.rush ? t('combo.rush') : t('combo.label');
+      }
+      (this.comboEl.querySelector('.combo-bar i') as HTMLElement).style.width = Math.max(0, (g.comboT / B.combo.window) * 100).toFixed(0) + '%';
+      if (g.comboBump !== this.comboSeen) {
+        this.comboSeen = g.comboBump;
+        this.comboEl.classList.remove('hit');
+        void this.comboEl.offsetWidth;
+        this.comboEl.classList.add('hit');
+      }
+    }
+    this.hand.classList.toggle('on', s.tutorial === 0 && !this.panel && !this.titleOn);
     if (this.panel) {
       this.panelT -= dt;
       if (this.panelT <= 0) {
@@ -198,7 +242,8 @@ export class UI implements GameUI {
       const paid = s.paid[o.id] ?? 0;
       const rem = Math.max(0, o.cost - paid);
       const pct = Math.max(0, Math.min(1, (paid + Math.min(s.cash, rem)) / o.cost));
-      const key = `${o.id}|${Math.round(pct * 100)}|${Math.ceil(rem)}|${s.settings.lang}`;
+      const prog = E.chainProgress(s);
+      const key = `${o.id}|${Math.round(pct * 100)}|${Math.ceil(rem)}|${s.settings.lang}|${prog.done}`;
       if (key !== this.objKey) {
         this.objKey = key;
         const it = o.item;
@@ -216,7 +261,7 @@ export class UI implements GameUI {
                     : t('tier.' + TIERS[s.tier + 1].id);
         const ready = pct >= 1;
         this.objEl.className = 'objective show' + (ready ? ' ready' : '');
-        this.objEl.innerHTML = `<div class="obj-ic">${icon(o.icon, 34)}</div><div class="obj-main"><div class="obj-label">${label}</div><div class="obj-row"><div class="bar"><i style="width:${(pct * 100).toFixed(1)}%"></i></div><span class="obj-cost">${money(Math.ceil(rem))}</span></div></div>`;
+        this.objEl.innerHTML = `<div class="obj-ic">${icon(o.icon, 34)}</div><div class="obj-main"><div class="obj-label"><span>${label}</span><em>${prog.done}/${prog.total}</em></div><div class="obj-row"><div class="bar"><i style="width:${(pct * 100).toFixed(1)}%"></i></div><span class="obj-cost">${money(Math.ceil(rem))}</span></div></div>`;
       }
     } else if (this.objKey) {
       this.objKey = '';
@@ -227,11 +272,13 @@ export class UI implements GameUI {
     const tut = s.tutorial;
     this.stepsEl.classList.toggle('show', tut < 3);
     if (tut < 3) {
-      const cur = tut <= 1 ? 0 : s.stats.cleaned === 0 ? 1 : 2;
-      const key = 'steps' + cur;
+      // 3 gestes à faire une fois : acheter, accueillir, nettoyer (dans l'ordre où ils se présentent)
+      const done = [s.stats.bought >= 1, s.stats.guests >= 1, s.stats.cleaned >= 1];
+      const cur = done.indexOf(false);
+      const key = 'steps' + done.join('');
       if (this.stepsEl.dataset.k !== key) {
         this.stepsEl.dataset.k = key;
-        this.stepsEl.innerHTML = ['bell', 'broom', 'up'].map((n, i) => `<div class="step ${i < cur ? 'done' : i === cur ? 'cur' : ''}">${icon(i < cur ? 'check' : n, 26)}</div>`).join('<i></i>');
+        this.stepsEl.innerHTML = ['cash', 'bell', 'broom'].map((n, i) => `<div class="step ${done[i] ? 'done' : i === cur ? 'cur' : ''}">${icon(done[i] ? 'check' : n, 26)}</div>`).join('<i></i>');
       }
     }
 

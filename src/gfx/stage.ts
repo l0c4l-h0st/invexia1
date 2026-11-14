@@ -3,7 +3,7 @@ import type { Mood } from './styles';
 
 const PITCH = (50 * Math.PI) / 180;
 const FOV = 36;
-const VIEW_W = 10.6; // largeur de monde visible en portrait
+const VIEW_W = 10.1; // largeur de monde visible en portrait
 const VIEW_H = 17;
 
 /** Rendu, caméra aérienne inclinée (~50°) avec suivi lissé, lumières, brouillard d'horizon. */

@@ -37,27 +37,27 @@ export const TIERS: TierDef[] = [
     id: 'motel',
     rate: 10,
     costBase: 1,
-    startRooms: 1,
+    startRooms: 2,
     maxRooms: 6,
+    // Début volontairement nerveux : un achat toutes les ~30 s pendant les premières minutes.
     chain: [
-      room(2, 25),
-      room(3, 60),
-      up(2, 110),
-      room(4, 160),
-      hire('receptionist', 1, 220),
-      room(5, 260),
-      hire('housekeeper', 1, 320),
-      room(6, 380),
-      svc('vending', 300),
-      hire('bellhop', 1, 400),
-      up(3, 520),
-      next(1100),
+      room(3, 15), // payé d'entrée avec la pile de bienvenue
+      room(4, 35),
+      up(2, 60),
+      svc('vending', 90),
+      room(5, 120),
+      hire('receptionist', 1, 150),
+      room(6, 190),
+      hire('housekeeper', 1, 230),
+      up(3, 300),
+      hire('bellhop', 1, 280),
+      next(700),
     ],
   },
   {
     id: 'inn',
     rate: 60,
-    costBase: 16,
+    costBase: 18,
     startRooms: 3,
     maxRooms: 8,
     chain: [
@@ -77,7 +77,7 @@ export const TIERS: TierDef[] = [
   {
     id: 'city',
     rate: 380,
-    costBase: 180,
+    costBase: 250,
     startRooms: 4,
     maxRooms: 10,
     chain: [
@@ -99,7 +99,7 @@ export const TIERS: TierDef[] = [
   {
     id: 'resort',
     rate: 2400,
-    costBase: 1700,
+    costBase: 2400,
     startRooms: 4,
     maxRooms: 12,
     chain: [
@@ -124,7 +124,7 @@ export const TIERS: TierDef[] = [
   {
     id: 'palace',
     rate: 15000,
-    costBase: 14000,
+    costBase: 20000,
     startRooms: 5,
     maxRooms: 14,
     chain: [
@@ -158,20 +158,22 @@ export type ThemeId = (typeof CITY_THEMES)[number];
 export const B = {
   // ----- Joueur -----
   player: {
-    speed: 4.7, // unités/s
+    speed: 5.6, // unités/s
     radius: 0.36,
-    capacity: 3, // serviettes portées
-    collectRadius: 1.3,
+    capacity: 4, // serviettes portées
+    collectRadius: 1.7, // effet "aimant" sur le cash
     payPerSecMin: 30, // débit mini de paiement sur une dalle ($/s)
-    payDuration: 1.4, // une dalle se paie en ~1,4 s si le cash est là
+    payDuration: 1.0, // une dalle se paie en ~1 s si le cash est là
+    starterCash: 20, // pile de bienvenue posée dans le hall au tout début d'un run
   },
 
   // ----- Clients -----
   guest: {
-    speed: 3.1,
-    sleep: 8.5, // durée du séjour (s) — volontairement courte : pas de timer bloquant
-    spawnEvery: 2.4, // s entre deux arrivées tant que la file n'est pas pleine
-    queueBase: 3, // taille de file de base
+    speed: 4.0,
+    sleep: 5.5, // durée du séjour (s) — courte : on n'attend jamais
+    spawnEvery: 1.5, // s entre deux arrivées tant que la file n'est pas pleine
+    queueBase: 4, // taille de file de base
+    checkinTip: 0.3, // part du tarif payée tout de suite à l'enregistrement (récompense immédiate)
     vipEvery: [50, 90] as [number, number], // s entre deux VIP
     vipMult: 6, // un VIP paie ×6
     serviceChance: 0.65, // proba d'utiliser un service après le séjour
@@ -183,21 +185,21 @@ export const B = {
   // ----- Zones (cercles au sol) -----
   zone: {
     radius: 0.95,
-    checkin: 1.0, // s pour enregistrer un client (joueur)
-    clean: 1.5, // s pour nettoyer une chambre (joueur)
+    checkin: 0.6, // s pour enregistrer un client (joueur)
+    clean: 0.9, // s pour nettoyer une chambre (joueur)
     decay: 2.5, // vitesse de vidage quand on sort
-    closetEvery: 0.11, // s entre deux serviettes chargées
+    closetEvery: 0.07, // s entre deux serviettes chargées
   },
 
   roomLevelMult: [1, 1.5, 2.25],
 
   // ----- Staff (valeurs de base, avant niveaux) -----
   staff: {
-    recCheckin: 1.4, // s par enregistrement
-    hkSpeed: 3.3,
-    hkClean: 2.0,
+    recCheckin: 1.0, // s par enregistrement
+    hkSpeed: 4.0,
+    hkClean: 1.4,
     hkCap: 2,
-    bhSpeed: 3.8,
+    bhSpeed: 4.6,
     speedPerLv: 0.08, // +8 % par niveau de vitesse
     recQueuePerLv: 1, // +1 place en file par niveau de capacité réception
     hkCapPerLv: 1,
@@ -219,10 +221,26 @@ export const B = {
 
   // ----- Déblocage progressif des systèmes -----
   unlock: {
-    staffTime: 600, // 10 min de jeu : rien d'autre que la boucle de base avant
+    staffTime: 150, // 2 min 30 de boucle de base seule (10 min à l'origine : jugé trop long au test)
     staffRooms: 4,
     upgradesStaff: 2, // améliorations : dès 2 employés (ou palier 2)
     questsBought: 3, // quêtes : 3 achats dans le palier 2
+  },
+
+  // ----- Combo "Rush" : enchaîner les actions soi-même gonfle les gains (bonus, jamais de malus) -----
+  combo: {
+    window: 6, // s pour enchaîner l'action suivante
+    per: 0.05, // +5 % de cash par cran
+    max: 10, // plafond : ×1,5
+    rushAt: 6, // à partir de ce cran : mode RUSH (vitesse +12 %, traînée d'étincelles)
+    rushSpeed: 1.12,
+  },
+
+  // ----- Pourboires oubliés : pièces d'or qui apparaissent dans l'hôtel -----
+  tips: {
+    every: [12, 22] as [number, number], // s entre deux pièces
+    max: 3, // pièces simultanées
+    value: 1.2, // en séjours au tarif courant
   },
 
   // ----- Villes -----

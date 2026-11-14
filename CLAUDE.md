@@ -28,7 +28,8 @@ Le titre se change dans **un seul fichier** : `src/config.ts`.
 | `node scripts/sim.cjs <minutes> <speed>` | fait jouer le bot en accéléré pour équilibrer |
 
 Paramètres d'URL de test : `?bot=1` (auto-joueur), `?speed=N` (accéléré), `?headless=1` (sans rendu),
-`?tier=0..4&city=N` (saute à un palier), `&demo=1` (tout acheté). Les sauts ne sauvegardent pas.
+`?tier=0..4&city=N` (saute à un palier), `&demo=1` (tout acheté), `?notitle=1` (sans écran-titre).
+Les sauts ne sauvegardent pas. Tout paramètre de test saute l'écran-titre.
 
 ## Architecture
 ```
@@ -53,6 +54,8 @@ src/i18n/            fr.ts (défaut), en.ts — AUCUN texte en dur ailleurs
 4. **Perf mobile** : tout ce qui se répète est instancié (`InstancedMesh`), le décor est fusionné
    (`Builder`), pas d'ombres temps réel (blob shadows + ombres cuites), pixel ratio ≤ 2.
 5. **Style unifié** : formes arrondies "chunky", couleurs de `src/gfx/styles.ts`, pas de look prototype.
+0. **Les 3 premières minutes passent avant tout** : une récompense dans les 10 premières secondes,
+   jamais d'attente, un achat toutes les 20 à 40 s. Voir `docs/GDD.md` §3 avant de toucher au début.
 6. **Systèmes introduits un par un** (`B.unlock` + `Game.checkFeatures`) : boucle de base, puis staff,
    améliorations, bonus, quêtes, prestige.
 7. Monétisation **factice** : tout passe par `AdProvider` (`src/core/ads.ts`). Aucune pub forcée.

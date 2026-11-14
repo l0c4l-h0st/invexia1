@@ -51,10 +51,17 @@ export class ItemPool {
 const itemsMat = new THREE.MeshLambertMaterial({ vertexColors: true });
 
 export function makeBillPool(scene: THREE.Scene): ItemPool {
-  const body = colored(new THREE.BoxGeometry(0.46, 0.07, 0.27), 0x3fbf63);
-  const band = colored(new THREE.BoxGeometry(0.12, 0.075, 0.275), 0xd8f7c4);
-  const face = colored(new THREE.BoxGeometry(0.4, 0.074, 0.2), 0x5fdb86);
+  const body = colored(new THREE.BoxGeometry(0.52, 0.085, 0.3), 0x34c466);
+  const band = colored(new THREE.BoxGeometry(0.13, 0.09, 0.305), 0xeafcd8);
+  const face = colored(new THREE.BoxGeometry(0.45, 0.089, 0.22), 0x62e58c);
   return new ItemPool(scene, mergeGeometries([body, band, face])!, itemsMat, 700);
+}
+export function makeCoinPool(scene: THREE.Scene): ItemPool {
+  const rim = new THREE.CylinderGeometry(0.3, 0.3, 0.08, 18);
+  rim.rotateX(Math.PI / 2);
+  const face = new THREE.CylinderGeometry(0.21, 0.21, 0.1, 14);
+  face.rotateX(Math.PI / 2);
+  return new ItemPool(scene, mergeGeometries([colored(rim, 0xffb81f), colored(face, 0xffe27a)])!, itemsMat, 48);
 }
 export function makeTowelPool(scene: THREE.Scene): ItemPool {
   const roll = new THREE.CylinderGeometry(0.15, 0.15, 0.44, 12);
@@ -254,6 +261,15 @@ export const zTex = glyphTex((ctx, s) => {
   ctx.strokeText('Z', s / 2, s / 2 + 3);
   ctx.fillStyle = '#fff';
   ctx.fillText('Z', s / 2, s / 2 + 3);
+});
+export const heartTex = glyphTex((ctx, s) => {
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  const c = s / 2;
+  ctx.moveTo(c, s * 0.86);
+  ctx.bezierCurveTo(s * 0.02, s * 0.56, s * 0.1, s * 0.12, c, s * 0.34);
+  ctx.bezierCurveTo(s * 0.9, s * 0.12, s * 0.98, s * 0.56, c, s * 0.86);
+  ctx.fill();
 });
 export { blobTex as puffTex };
 

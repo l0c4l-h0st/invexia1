@@ -291,6 +291,12 @@ export class AudioSys {
   vip(): void {
     [84, 88, 91, 96, 100].forEach((n, i) => this.tone(midi(n), 0.3, 0.09, 'sine', i * 0.05));
   }
+  /** Cran de combo : la note monte avec le multiplicateur. */
+  combo(n: number): void {
+    const f = midi(72 + n * 2);
+    this.tone(f, 0.12, 0.1, 'triangle');
+    this.tone(f * 1.5, 0.1, 0.05, 'sine', 0.03);
+  }
   tap(): void {
     this.tone(900, 0.04, 0.1, 'triangle', 0, 600);
   }

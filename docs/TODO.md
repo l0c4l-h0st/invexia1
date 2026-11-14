@@ -44,8 +44,12 @@
 
 ## Reste à faire
 
-### Priorité 1 — à faire après le premier test sur téléphone
-- Ajuster l'équilibrage sur des parties humaines : il a été réglé avec un bot qui ne se trompe
+### Priorité 1 — à confirmer en jouant (début refait en session 2)
+- Rejouer les 3 premières minutes : le rythme est-il le bon ? Tout se règle dans `src/balance.ts`
+  (`guest.sleep`, `guest.spawnEvery`, chaîne du motel, `unlock.staffTime`, `combo`, `tips`).
+- Le combo est-il lisible et motivant, ou de trop ? Il se coupe en mettant `combo.per` à 0.
+
+- Ajuster l'équilibrage global sur des parties humaines : il a été réglé avec un bot qui ne se trompe
   jamais (estimation : un humain est ~1,5× plus lent). Tout se règle dans `src/balance.ts`.
 - Régler le feeling d'après le test réel : vitesse du joueur, zoom caméra (`VIEW_W` dans
   `src/gfx/stage.ts`), durée des cercles, volume des sons.

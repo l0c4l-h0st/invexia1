@@ -56,6 +56,8 @@ const ui = new UI(store, stage);
 const joy = new Joystick(canvas, uiRoot);
 const game = new Game(stage, store, joy, ui);
 ui.game = game;
+const testing = ['bot', 'tier', 'city', 'demo', 'run2', 'headless', 'speed', 'notitle'].some((k) => params.has(k));
+if (!testing) ui.showTitle();
 
 // ---- outils de test : ?bot=1 (auto-joueur) & ?speed=N (accéléré)
 const speed = Math.max(1, Math.min(4000, Number(params.get('speed')) || 1));

@@ -83,10 +83,10 @@ export class HotelView {
     b.slab(-ex, LD + 0.15, ex, 9.1, mood.path, -0.005, 0.05);
     b.slab(-ex, 13.2, ex, 18.2, mood.road, -0.005, 0.05);
     for (let x = -ex + 1; x < ex; x += 3) b.slab(x, 15.6, x + 1.5, 15.8, 0xf4e9b0, 0.0, 0.05);
-    const lot = st.dingy ? 0x55545c : P.lighten(mood.road, 0.06);
+    const lot = st.dingy ? 0x7a7682 : P.lighten(mood.road, 0.06);
     b.slab(0.9, 9.1, 13.4, 13.2, lot, -0.004, 0.05);
-    for (let i = 0; i <= 5; i++) b.slab(1.2 + i * 2.35, 9.7, 1.3 + i * 2.35, 12.6, st.dingy ? 0x8a8a84 : 0xffffff, 0.001, 0.05);
-    b.slab(-1.2, LD - 0.1, 1.2, 8.3, st.dingy ? 0x6a4a3a : st.runner ?? st.accent, 0.0, 0.05); // paillasson
+    for (let i = 0; i <= 5; i++) b.slab(1.2 + i * 2.35, 9.7, 1.3 + i * 2.35, 12.6, st.dingy ? 0xc9c6bd : 0xffffff, 0.001, 0.05);
+    b.slab(-1.2, LD - 0.1, 1.2, 8.3, st.dingy ? 0xc44a72 : st.runner ?? st.accent, 0.0, 0.05); // paillasson
     if (st.dingy) {
       // fissures, herbes folles, flaques
       for (let i = 0; i < 9; i++) {
@@ -112,6 +112,16 @@ export class HotelView {
       const nz = 5;
       const sz = LD / nz;
       for (let i = 0; i < n; i++) for (let k = 0; k < nz; k++) b.slab(-HX + i * sx, k * sz, -HX + (i + 1) * sx, (k + 1) * sz, (i + k) % 2 ? c1 : c2, 0, 0.06);
+      if (st.dingy) {
+        // lino fatigué : dalles ternies, dalles manquantes, taches
+        for (let i = 0; i < 7; i++) {
+          const ti = Math.floor(rnd() * n);
+          const tk = Math.floor(rnd() * nz);
+          const col = i % 3 === 0 ? 0xb9ab95 : P.lighten((ti + tk) % 2 ? c1 : c2, -0.09);
+          b.slab(-HX + ti * sx + 0.04, tk * sz + 0.04, -HX + (ti + 1) * sx - 0.04, (tk + 1) * sz - 0.04, col, 0.003, 0.06);
+        }
+        for (let i = 0; i < 5; i++) b.cyl(0.25 + rnd() * 0.3, 0.3, 0.012, 0xcdb894, -4.8 + rnd() * 9, 0.008, 0.8 + rnd() * 6, { seg: 9, sz: 0.6 + rnd() * 0.5, grad: 0 });
+      }
     } else if (st.lobbyPattern === 'planks') {
       const n = 10;
       const sz = LD / n;
@@ -160,12 +170,12 @@ export class HotelView {
         if (ww > wd) {
           const n = Math.floor(ww / 1.4);
           for (let i = 0; i < n; i++) {
-            if (rnd() < 0.55) b.box(0.4 + rnd() * 0.7, 0.25 + rnd() * 0.5, 0.02, rnd() < 0.5 ? st.wallAlt : 0xd3c7a2, w.x0 + 0.5 + i * 1.4 + rnd() * 0.4, 0.15 + rnd() * 0.4, w.z1 + 0.003, { r: 0.01, grad: 0 });
+            if (rnd() < 0.55) b.box(0.4 + rnd() * 0.7, 0.25 + rnd() * 0.5, 0.02, rnd() < 0.5 ? st.wallAlt : 0xd08a62, w.x0 + 0.5 + i * 1.4 + rnd() * 0.4, 0.15 + rnd() * 0.4, w.z1 + 0.003, { r: 0.01, grad: 0 });
           }
         }
         if (rnd() < 0.6) {
           const t = rnd();
-          b.box(ww > wd ? 0.7 : ww + 0.1, 0.14, ww > wd ? wd + 0.1 : 0.7, 0x4f4234, ww > wd ? w.x0 + 0.5 + t * Math.max(0, ww - 1) : cx, WH - 0.02, ww > wd ? cz : w.z0 + 0.5 + t * Math.max(0, wd - 1), { r: 0.04, grad: 0 });
+          b.box(ww > wd ? 0.7 : ww + 0.1, 0.14, ww > wd ? wd + 0.1 : 0.7, P.lighten(st.trim, -0.2), ww > wd ? w.x0 + 0.5 + t * Math.max(0, ww - 1) : cx, WH - 0.02, ww > wd ? cz : w.z0 + 0.5 + t * Math.max(0, wd - 1), { r: 0.04, grad: 0 });
         }
       } else if (st.luxe >= 2 && ww > wd && ww > 2) {
         b.box(ww - 0.4, 0.08, 0.03, st.metal, cx, 0.5, w.z1 + 0.004, { r: 0.01, grad: 0 });
@@ -173,7 +183,67 @@ export class HotelView {
     }
     // numéros / paillassons de porte
     for (const r of l.rooms) {
-      b.slab(r.side * (CW - 0.75), r.cz - 0.5, r.side * (CW - 0.2), r.cz + 0.5, st.dingy ? 0x5a4a3a : st.accent, 0.012, 0.06);
+      b.slab(r.side * (CW - 0.75), r.cz - 0.5, r.side * (CW - 0.2), r.cz + 0.5, st.dingy ? 0xd0764f : st.accent, 0.012, 0.06);
+    }
+
+    // portes : battant ouvert à 90° dans chaque chambre, face caméra
+    const doorC = st.dingy ? P.lighten(st.trim, -0.06) : st.luxe >= 3 ? st.metal : P.lighten(st.wood, 0.06);
+    for (const r of l.rooms) {
+      const dx = r.side * (CW + 0.15 + 0.37);
+      const dz = r.cz - L.DOOR / 2 - 0.04;
+      b.box(0.74, WH * 0.96, 0.09, doorC, dx, 0, dz, { r: 0.03 });
+      b.box(0.5, WH * 0.34, 0.1, P.lighten(doorC, 0.1), dx, WH * 0.5, dz, { r: 0.02, grad: 0 });
+      b.sph(0.06, st.metal, dx + r.side * 0.24, WH * 0.45, dz + 0.07, { seg: 6 });
+    }
+
+    // --- abords : haies, arbres et massifs le long du bâtiment (là où il n'y a pas de service)
+    const leaf = st.dingy ? 0x8fb35a : 0x4fbf5f;
+    const hasE = !!(l.services.casino || l.services.heliport);
+    for (let r = 0; r < l.rows; r++) {
+      const z = -(r + 0.5) * L.RD;
+      for (const side of [-1, 1]) {
+        if (hasE) continue;
+        P.bush(b.push(side * (HX + 0.95), 0, z - 1.0 + rnd() * 0.4, rnd() * 3), r % 3 === 1 ? P.lighten(leaf, 0.06) : leaf);
+        b.pop();
+        P.bush(b.push(side * (HX + 1.05), 0, z + 1.0 + rnd() * 0.4, rnd() * 3), leaf);
+        b.pop();
+        if (r % 2 === 0) {
+          P.tree(b.push(side * (HX + 2.7), 0, z + rnd(), rnd() * 3), st.dingy ? 0x9ab85e : r % 4 === 0 ? 0xff9ec4 : leaf, 0.95 + rnd() * 0.3);
+          b.pop();
+        } else if (!st.dingy) {
+          P.flowerBed(b.push(side * (HX + 2.4), 0, z, Math.PI / 2), 0xff7eb6, 0xffd166);
+          b.pop();
+        }
+      }
+    }
+    if (!l.northDoor) {
+      for (let x = -4.8; x <= 4.8; x += 1.6) {
+        P.bush(b.push(x, 0, l.zN - 1.0 + rnd() * 0.3, rnd() * 3), leaf);
+        b.pop();
+      }
+      P.tree(b.push(-3.2, 0, l.zN - 2.6), leaf, 1.2);
+      b.pop();
+      P.tree(b.push(3.4, 0, l.zN - 2.9), st.dingy ? 0x9ab85e : 0xff9ec4, 1.1);
+      b.pop();
+    }
+    for (const side of [-1, 1]) {
+      const used = side > 0 ? l.eastDoor : l.westDoor;
+      if (used) continue;
+      for (let k = 0; k < 3; k++) {
+        P.bush(b.push(side * (HX + 0.95), 0, 1.2 + k * 2.4 + rnd() * 0.3, rnd() * 3), k === 1 ? P.lighten(leaf, 0.06) : leaf);
+        b.pop();
+      }
+      if (st.dingy) {
+        // bidons et pneus oubliés
+        b.cyl(0.32, 0.32, 0.8, 0x4f9a9a, side * (HX + 2.3), 0, 2.2, { seg: 10 });
+        b.cyl(0.32, 0.32, 0.8, 0xd9773f, side * (HX + 2.9), 0, 2.9, { seg: 10 });
+        b.shadow(side * (HX + 2.6), 2.5, 1.8, 1.6, 0.3);
+        b.cyl(0.4, 0.4, 0.22, 0x33333a, side * (HX + 2.4), 0, 5.2, { seg: 12 });
+        b.cyl(0.4, 0.4, 0.22, 0x33333a, side * (HX + 2.5), 0.22, 5.25, { seg: 12 });
+      } else {
+        P.tree(b.push(side * (HX + 2.6), 0, 3.4), 0xff9ec4, 1.1);
+        b.pop();
+      }
     }
 
     // --- hall
@@ -181,7 +251,7 @@ export class HotelView {
     b.pop();
     P.linenShelf(b.push(l.closetShelf.x, 0, l.closetShelf.z), st);
     b.pop();
-    b.slab(l.closetZone.x - 1.3, l.closetZone.z - 1.3, l.closetZone.x + 1.3, l.closetZone.z + 1.3, st.dingy ? 0x6a5c4c : P.lighten(st.rug, 0.1), 0.006, 0.06);
+    b.slab(l.closetZone.x - 1.3, l.closetZone.z - 1.3, l.closetZone.x + 1.3, l.closetZone.z + 1.3, P.lighten(st.rug, st.dingy ? 0.04 : 0.1), 0.006, 0.06);
     if (!l.services.vending) {
       P.sofa(b.push(-3.6, 0, 6.85, Math.PI), st.luxe >= 3 ? 0x7b3fe4 : st.runner ?? 0x5b8def);
       b.pop();
@@ -739,7 +809,7 @@ export class HotelView {
     const n = dingy ? 3 : 5;
     for (let i = 0; i < n; i++) {
       const b = new Builder();
-      P.car(b, dingy ? [0x8a7a5a, 0x6f8a8a, 0x9a5a4a][i % 3] : CAR_COLORS[(i * 2 + this.tier) % CAR_COLORS.length], dingy);
+      P.car(b, dingy ? [0xd9a05a, 0x6fb0b0, 0xc9705a][i % 3] : CAR_COLORS[(i * 2 + this.tier) % CAR_COLORS.length], dingy);
       const g = b.build();
       g.visible = false;
       g.userData.home = { x: 2.4 + i * 2.35, z: 11.1 };
